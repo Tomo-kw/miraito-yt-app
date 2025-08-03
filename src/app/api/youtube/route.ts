@@ -18,6 +18,7 @@ interface YouTubeSearchItem {
 
 interface YouTubeSearchResponse {
   items: YouTubeSearchItem[];
+  nextPageToken?: string;
 }
 
 export async function GET(request: NextRequest) {
@@ -25,6 +26,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const channelId = searchParams.get("channelId");
     const maxResults = searchParams.get("maxResults") || "15";
+    const pageToken = searchParams.get("pageToken") || "";
 
     if (!channelId) {
       return NextResponse.json(
@@ -43,9 +45,17 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const searchUrl = `https://www.googleapis.com/youtube/v3/search?key=${apiKey}&channelId=${channelId}&part=snippet&order=date&type=video&maxResults=${maxResults}`;
+    let searchUrl = `https://www.googleapis.com/youtube/v3/search?key=${apiKey}&channelId=${channelId}&part=snippet&order=date&type=video&maxResults=${maxResults}`;
 
-    console.log("Fetching from YouTube API:", { channelId, maxResults });
+    if (pageToken) {
+      searchUrl += `&pageToken=${pageToken}`;
+    }
+
+    console.log("Fetching from YouTube API:", {
+      channelId,
+      maxResults,
+      pageToken,
+    });
 
     const response = await fetch(searchUrl);
 
@@ -70,11 +80,18 @@ export async function GET(request: NextRequest) {
 
     console.log(`Successfully fetched ${videos.length} videos`);
 
-    return NextResponse.json(videos, {
-      headers: {
-        "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+    return NextResponse.json(
+      {
+        videos,
+        nextPageToken: data.nextPageToken,
       },
-    });
+      {
+        headers: {
+          "Cache-Control":
+            "public, s-maxage=3600, stale-while-revalidate=86400",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error in YouTube API route:", error);
     return NextResponse.json(

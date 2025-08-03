@@ -16,6 +16,7 @@ import { YouTubeVideo } from "@/lib/youtube";
 interface VideoListProps {
   videos: YouTubeVideo[];
   isLoading?: boolean;
+  lastVideoElementRef?: (node: HTMLDivElement) => void;
 }
 
 function formatDate(dateString: string): string {
@@ -27,102 +28,116 @@ function formatDate(dateString: string): string {
   });
 }
 
-function VideoCard({ video }: { video: YouTubeVideo }) {
+function VideoCard({
+  video,
+  isLast,
+  lastVideoElementRef,
+}: {
+  video: YouTubeVideo;
+  isLast?: boolean;
+  lastVideoElementRef?: (node: HTMLDivElement) => void;
+}) {
   const youtubeUrl = `https://www.youtube.com/watch?v=${video.id}`;
 
   return (
-    <Link
-      href={youtubeUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      _hover={{ textDecoration: "none" }}
-      display="block"
-    >
-      <Box
-        borderWidth="1px"
-        borderColor="gray.700"
-        borderRadius="xl"
-        overflow="hidden"
-        bg="gray.800"
-        shadow="lg"
-        _hover={{
-          shadow: "2xl",
-          transform: "translateY(-4px)",
-          borderColor: "yellow.400",
-        }}
-        transition="all 0.3s ease"
-        h="full"
+    <Box ref={isLast ? lastVideoElementRef : null}>
+      <Link
+        href={youtubeUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        _hover={{ textDecoration: "none" }}
+        display="block"
       >
-        {/* サムネイル */}
-        <Box position="relative">
-          <Image
-            src={video.thumbnail}
-            alt={video.title}
-            w="full"
-            h="200px"
-            objectFit="cover"
-          />
-          <Box
-            position="absolute"
-            top={3}
-            right={3}
-            bg="blackAlpha.800"
-            color="yellow.400"
-            p={2}
-            borderRadius="full"
-            fontSize="sm"
-            _hover={{
-              bg: "yellow.400",
-              color: "gray.900",
-            }}
-            transition="all 0.2s ease"
-          >
-            <FiExternalLink />
+        <Box
+          borderWidth="1px"
+          borderColor="gray.700"
+          borderRadius="xl"
+          overflow="hidden"
+          bg="gray.800"
+          shadow="lg"
+          _hover={{
+            shadow: "2xl",
+            transform: "translateY(-4px)",
+            borderColor: "yellow.400",
+          }}
+          transition="all 0.3s ease"
+          h="full"
+        >
+          {/* サムネイル */}
+          <Box position="relative">
+            <Image
+              src={video.thumbnail}
+              alt={video.title}
+              w="full"
+              h="200px"
+              objectFit="cover"
+            />
+            <Box
+              position="absolute"
+              top={3}
+              right={3}
+              bg="blackAlpha.800"
+              color="yellow.400"
+              p={2}
+              borderRadius="full"
+              fontSize="sm"
+              _hover={{
+                bg: "yellow.400",
+                color: "gray.900",
+              }}
+              transition="all 0.2s ease"
+            >
+              <FiExternalLink />
+            </Box>
+
+            {/* Gradient Overlay */}
+            <Box
+              position="absolute"
+              bottom={0}
+              left={0}
+              right={0}
+              h="20px"
+              bgGradient="linear(to-t, gray.800, transparent)"
+            />
           </Box>
 
-          {/* Gradient Overlay */}
-          <Box
-            position="absolute"
-            bottom={0}
-            left={0}
-            right={0}
-            h="20px"
-            bgGradient="linear(to-t, gray.800, transparent)"
-          />
+          {/* 動画情報 */}
+          <VStack align="start" p={5} gap={3}>
+            <Text
+              fontSize="md"
+              fontWeight="semibold"
+              lineHeight="1.4"
+              color="white"
+              css={{
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+              }}
+              _hover={{
+                color: "yellow.400",
+              }}
+              transition="color 0.2s ease"
+            >
+              {video.title}
+            </Text>
+
+            <HStack gap={2} color="gray.400" fontSize="sm">
+              <FiCalendar size={14} />
+              <Text>{formatDate(video.publishedAt)}</Text>
+            </HStack>
+          </VStack>
         </Box>
-
-        {/* 動画情報 */}
-        <VStack align="start" p={5} gap={3}>
-          <Text
-            fontSize="md"
-            fontWeight="semibold"
-            lineHeight="1.4"
-            color="white"
-            css={{
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
-            }}
-            _hover={{
-              color: "yellow.400",
-            }}
-            transition="color 0.2s ease"
-          >
-            {video.title}
-          </Text>
-
-          <HStack gap={2} color="gray.400" fontSize="sm">
-            <FiCalendar size={14} />
-            <Text>{formatDate(video.publishedAt)}</Text>
-          </HStack>
-        </VStack>
-      </Box>
-    </Link>
+      </Link>
+    </Box>
   );
 }
 
-export default function VideoList({ videos, isLoading }: VideoListProps) {
+export default function VideoList({
+  videos,
+  isLoading,
+  lastVideoElementRef,
+}: VideoListProps) {
   if (isLoading) {
     return (
       <VStack gap={6} w="full">
@@ -184,8 +199,13 @@ export default function VideoList({ videos, isLoading }: VideoListProps) {
       gap={8}
       w="full"
     >
-      {videos.map((video) => (
-        <VideoCard key={video.id} video={video} />
+      {videos.map((video, index) => (
+        <VideoCard
+          key={video.id}
+          video={video}
+          isLast={index === videos.length - 1}
+          lastVideoElementRef={lastVideoElementRef}
+        />
       ))}
     </Grid>
   );

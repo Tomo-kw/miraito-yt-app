@@ -6,12 +6,22 @@ export interface YouTubeVideo {
   channelTitle: string;
 }
 
+export interface YouTubeResponse {
+  videos: YouTubeVideo[];
+  nextPageToken?: string;
+}
+
 export async function getChannelVideos(
   channelId: string,
-  maxResults: number = 15
-): Promise<YouTubeVideo[]> {
+  maxResults: number = 15,
+  pageToken?: string
+): Promise<YouTubeResponse> {
   try {
-    const url = `/api/youtube?channelId=${channelId}&maxResults=${maxResults}`;
+    let url = `/api/youtube?channelId=${channelId}&maxResults=${maxResults}`;
+
+    if (pageToken) {
+      url += `&pageToken=${pageToken}`;
+    }
 
     console.log("Fetching videos from API route:", url);
 
@@ -22,11 +32,11 @@ export async function getChannelVideos(
       throw new Error(errorData.error || `API error: ${response.status}`);
     }
 
-    const videos: YouTubeVideo[] = await response.json();
+    const data: YouTubeResponse = await response.json();
 
-    console.log(`Successfully received ${videos.length} videos`);
+    console.log(`Successfully received ${data.videos.length} videos`);
 
-    return videos;
+    return data;
   } catch (error) {
     console.error("Error fetching YouTube videos:", error);
     throw error;
