@@ -13,8 +13,9 @@ import {
   Spinner,
   useBreakpointValue,
   Flex,
+  Input,
 } from "@chakra-ui/react";
-import { FiDownload, FiShare } from "react-icons/fi";
+import { FiDownload, FiShare, FiSearch } from "react-icons/fi";
 import { useEffect, useState, useCallback, useRef } from "react";
 import VideoList from "@/components/VideoList";
 import { YouTubeVideo, getChannelVideos } from "@/lib/youtube";
@@ -35,6 +36,7 @@ export default function Home() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [nextPageToken, setNextPageToken] = useState<string | undefined>();
   const [hasMore, setHasMore] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // レスポンシブ値
   const isLargeScreen = useBreakpointValue({ base: false, lg: true });
@@ -144,6 +146,14 @@ export default function Home() {
       }
     }
   };
+
+  // 検索フィルタ済み動画リスト
+  const filteredVideos =
+    searchQuery.trim() === ""
+      ? videos
+      : videos.filter((video) =>
+          video.title.toLowerCase().includes(searchQuery.toLowerCase())
+        );
 
   return (
     <Box minH="100vh" bg="gray.900" color="white">
@@ -364,10 +374,47 @@ export default function Home() {
                 最新{videos.length > 0 ? videos.length : ""}
                 本の動画をお楽しみください
               </Text>
+              {/* 検索ボックス */}
+              <HStack w="full" maxW="md" gap={2} mt={2}>
+                <Box color="yellow.400" pl={3} pt={1}>
+                  <FiSearch />
+                </Box>
+                <Input
+                  placeholder="動画タイトルで検索"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  bg="gray.800"
+                  color="white"
+                  borderColor="yellow.400"
+                  _placeholder={{ color: "gray.400" }}
+                  borderRadius="full"
+                  size="lg"
+                />
+              </HStack>
+              {/* 検索注記 */}
+              <Text
+                fontSize="xs"
+                color="gray.400"
+                textAlign="left"
+                w="full"
+                maxW="md"
+                pl={8}
+              >
+                ※現在表示中の動画のみ検索対象です
+              </Text>
             </VStack>
 
+            {/* 検索結果が0件の場合の表示 */}
+            {filteredVideos.length === 0 && !videosLoading && (
+              <VStack gap={6} py={12}>
+                <Text fontSize="xl" color="gray.400" fontWeight="medium">
+                  該当する動画がありません
+                </Text>
+              </VStack>
+            )}
+
             <VideoList
-              videos={videos}
+              videos={filteredVideos}
               isLoading={videosLoading}
               lastVideoElementRef={lastVideoElementRef}
             />

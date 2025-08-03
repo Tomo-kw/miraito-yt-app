@@ -241,29 +241,7 @@ export default function VideoList({
     );
   }
 
-  if (!videos || videos.length === 0) {
-    return (
-      <VStack gap={6} py={12}>
-        <Box
-          p={8}
-          bg="gray.800"
-          borderRadius="xl"
-          borderWidth="2px"
-          borderColor="gray.700"
-          borderStyle="dashed"
-        >
-          <VStack gap={4}>
-            <Text fontSize="xl" color="gray.400" fontWeight="medium">
-              動画が見つかりませんでした
-            </Text>
-            <Text fontSize="sm" color="gray.500">
-              しばらく時間をおいてから再度お試しください
-            </Text>
-          </VStack>
-        </Box>
-      </VStack>
-    );
-  }
+  // ここで動画0件時の表示はしない（page.tsxで表示）
 
   return (
     <Grid
