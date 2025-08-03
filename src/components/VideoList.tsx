@@ -17,7 +17,6 @@ import { YouTubeVideo } from "@/lib/youtube";
 interface VideoListProps {
   videos: YouTubeVideo[];
   isLoading?: boolean;
-  lastVideoElementRef?: (node: HTMLDivElement) => void;
 }
 
 function formatDate(dateString: string): string {
@@ -45,19 +44,11 @@ function formatDuration(seconds: number): string {
   }
 }
 
-function VideoCard({
-  video,
-  isLast,
-  lastVideoElementRef,
-}: {
-  video: YouTubeVideo;
-  isLast?: boolean;
-  lastVideoElementRef?: (node: HTMLDivElement) => void;
-}) {
+function VideoCard({ video }: { video: YouTubeVideo }) {
   const youtubeUrl = `https://www.youtube.com/watch?v=${video.id}`;
 
   return (
-    <Box ref={isLast ? lastVideoElementRef : null}>
+    <Box>
       <Link
         href={youtubeUrl}
         target="_blank"
@@ -209,11 +200,7 @@ function VideoCard({
   );
 }
 
-export default function VideoList({
-  videos,
-  isLoading,
-  lastVideoElementRef,
-}: VideoListProps) {
+export default function VideoList({ videos, isLoading }: VideoListProps) {
   if (isLoading) {
     return (
       <VStack gap={6} w="full">
@@ -241,8 +228,6 @@ export default function VideoList({
     );
   }
 
-  // ここで動画0件時の表示はしない（page.tsxで表示）
-
   return (
     <Grid
       templateColumns={{
@@ -253,13 +238,8 @@ export default function VideoList({
       gap={8}
       w="full"
     >
-      {videos.map((video, index) => (
-        <VideoCard
-          key={video.id}
-          video={video}
-          isLast={index === videos.length - 1}
-          lastVideoElementRef={lastVideoElementRef}
-        />
+      {videos.map((video) => (
+        <VideoCard key={video.id} video={video} />
       ))}
     </Grid>
   );

@@ -15,7 +15,7 @@ import {
   Flex,
   Input,
 } from "@chakra-ui/react";
-import { FiDownload, FiShare, FiSearch } from "react-icons/fi";
+import { FiDownload, FiShare, FiSearch, FiChevronDown } from "react-icons/fi";
 import { useEffect, useState, useCallback, useRef } from "react";
 import VideoList from "@/components/VideoList";
 import { YouTubeVideo, getChannelVideos } from "@/lib/youtube";
@@ -107,7 +107,7 @@ export default function Home() {
     const initializeVideos = async () => {
       try {
         setVideosLoading(true);
-        const response = await getChannelVideos(MIRAITO_CHANNEL_ID, 15);
+        const response = await getChannelVideos(MIRAITO_CHANNEL_ID, 30);
         setVideos(response.videos);
         setNextPageToken(response.nextPageToken);
         setHasMore(!!response.nextPageToken);
@@ -154,6 +154,26 @@ export default function Home() {
       : videos.filter((video) =>
           video.title.toLowerCase().includes(searchQuery.toLowerCase())
         );
+
+  // 追加取得処理
+  const handleLoadMore = async () => {
+    if (!nextPageToken || loadingMore) return;
+    try {
+      setLoadingMore(true);
+      const response = await getChannelVideos(
+        MIRAITO_CHANNEL_ID,
+        30,
+        nextPageToken
+      );
+      setVideos((prev) => [...prev, ...response.videos]);
+      setNextPageToken(response.nextPageToken);
+      setHasMore(!!response.nextPageToken);
+    } catch (error) {
+      console.error("Failed to load more videos:", error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   return (
     <Box minH="100vh" bg="gray.900" color="white">
@@ -413,11 +433,42 @@ export default function Home() {
               </VStack>
             )}
 
-            <VideoList
-              videos={filteredVideos}
-              isLoading={videosLoading}
-              lastVideoElementRef={lastVideoElementRef}
-            />
+            <VideoList videos={filteredVideos} isLoading={videosLoading} />
+
+            {/* 続きを見るボタン */}
+            {hasMore && filteredVideos.length > 0 && !videosLoading && (
+              <VStack py={8}>
+                <Button
+                  onClick={handleLoadMore}
+                  bg="yellow.400"
+                  color="gray.900"
+                  borderRadius="full"
+                  fontWeight="bold"
+                  size="lg"
+                  px={8}
+                  shadow="lg"
+                  _hover={{
+                    bg: "yellow.300",
+                    transform: "translateY(-2px)",
+                    shadow: "xl",
+                  }}
+                  transition="all 0.3s ease"
+                  disabled={loadingMore}
+                >
+                  {loadingMore ? (
+                    <HStack gap={2}>
+                      <Spinner size="sm" color="gray.900" />
+                      <span>読み込み中...</span>
+                    </HStack>
+                  ) : (
+                    <HStack gap={2}>
+                      <FiChevronDown />
+                      <span>続きを見る</span>
+                    </HStack>
+                  )}
+                </Button>
+              </VStack>
+            )}
 
             {/* Loading More Indicator */}
             {loadingMore && (
