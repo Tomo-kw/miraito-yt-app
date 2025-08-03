@@ -204,7 +204,7 @@ export default function Home() {
                       color="white"
                       textShadow="2px 2px 4px rgba(0,0,0,0.5)"
                     >
-                      Miraito Channel
+                      Miraito Tube
                     </Heading>
                     <Text
                       fontSize={subtitleSize}
@@ -285,7 +285,7 @@ export default function Home() {
                       color="white"
                       textShadow="2px 2px 4px rgba(0,0,0,0.5)"
                     >
-                      Miraito Channel
+                      Miraito Tube
                     </Heading>
                     <Text
                       fontSize={subtitleSize}
@@ -386,9 +386,9 @@ export default function Home() {
                 textShadow="2px 2px 4px rgba(0,0,0,0.5)"
               >
                 <Text as="span" color="yellow.400">
-                  Miraito
+                  MIRAITO CHANNEL
                 </Text>
-                チャンネル最新動画
+                最新動画
               </Heading>
               <Text fontSize="md" color="gray.400" textAlign="center">
                 最新{videos.length > 0 ? videos.length : ""}
