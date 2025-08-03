@@ -16,7 +16,7 @@ import {
   Input,
 } from "@chakra-ui/react";
 import { FiDownload, FiShare, FiSearch, FiChevronDown } from "react-icons/fi";
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState } from "react";
 import VideoList from "@/components/VideoList";
 import { YouTubeVideo, getChannelVideos } from "@/lib/youtube";
 
@@ -46,42 +46,6 @@ export default function Home() {
   const logoSize = useBreakpointValue({ base: 16, lg: 20 });
   const titleSize = useBreakpointValue({ base: "2xl", lg: "4xl" });
   const subtitleSize = useBreakpointValue({ base: "sm", lg: "lg" });
-
-  const loadMoreVideos = useCallback(async () => {
-    if (!nextPageToken || loadingMore) return;
-
-    try {
-      setLoadingMore(true);
-      const response = await getChannelVideos(
-        MIRAITO_CHANNEL_ID,
-        15,
-        nextPageToken
-      );
-
-      setVideos((prev) => [...prev, ...response.videos]);
-      setNextPageToken(response.nextPageToken);
-      setHasMore(!!response.nextPageToken);
-    } catch (error) {
-      console.error("Failed to load more videos:", error);
-    } finally {
-      setLoadingMore(false);
-    }
-  }, [nextPageToken, loadingMore]);
-
-  const observer = useRef<IntersectionObserver | null>(null);
-  const lastVideoElementRef = useCallback(
-    (node: HTMLDivElement) => {
-      if (loadingMore) return;
-      if (observer.current) observer.current.disconnect();
-      observer.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && hasMore && !loadingMore) {
-          loadMoreVideos();
-        }
-      });
-      if (node) observer.current.observe(node);
-    },
-    [loadingMore, hasMore, loadMoreVideos]
-  );
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: BeforeInstallPromptEvent) => {
