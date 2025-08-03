@@ -21,6 +21,35 @@ interface YouTubeSearchResponse {
   nextPageToken?: string;
 }
 
+interface YouTubeVideoItem {
+  id: string;
+  contentDetails: {
+    duration: string;
+  };
+  snippet: {
+    liveBroadcastContent: string;
+  };
+  liveStreamingDetails?: {
+    actualEndTime?: string;
+  };
+}
+
+interface YouTubeVideosResponse {
+  items: YouTubeVideoItem[];
+}
+
+// ISO 8601 duration文字列を秒数に変換
+function parseDuration(duration: string): number {
+  const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if (!match) return 0;
+
+  const hours = parseInt(match[1] || "0", 10);
+  const minutes = parseInt(match[2] || "0", 10);
+  const seconds = parseInt(match[3] || "0", 10);
+
+  return hours * 3600 + minutes * 60 + seconds;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -45,45 +74,101 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Step 1: Search for videos
     let searchUrl = `https://www.googleapis.com/youtube/v3/search?key=${apiKey}&channelId=${channelId}&part=snippet&order=date&type=video&maxResults=${maxResults}`;
 
     if (pageToken) {
       searchUrl += `&pageToken=${pageToken}`;
     }
 
-    console.log("Fetching from YouTube API:", {
+    console.log("Fetching from YouTube API (search):", {
       channelId,
       maxResults,
       pageToken,
     });
 
-    const response = await fetch(searchUrl);
+    const searchResponse = await fetch(searchUrl);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("YouTube API error:", response.status, errorText);
+    if (!searchResponse.ok) {
+      const errorText = await searchResponse.text();
+      console.error(
+        "YouTube API search error:",
+        searchResponse.status,
+        errorText
+      );
       return NextResponse.json(
-        { error: `YouTube API error: ${response.status}` },
-        { status: response.status }
+        { error: `YouTube API error: ${searchResponse.status}` },
+        { status: searchResponse.status }
       );
     }
 
-    const data: YouTubeSearchResponse = await response.json();
+    const searchData: YouTubeSearchResponse = await searchResponse.json();
 
-    const videos = data.items.map((item: YouTubeSearchItem) => ({
-      id: item.id.videoId,
-      title: item.snippet.title,
-      thumbnail: item.snippet.thumbnails.medium.url,
-      publishedAt: item.snippet.publishedAt,
-      channelTitle: item.snippet.channelTitle,
-    }));
+    // Step 2: Get video details for duration and live broadcast info
+    const videoIds = searchData.items.map((item) => item.id.videoId).join(",");
+    const videosUrl = `https://www.googleapis.com/youtube/v3/videos?key=${apiKey}&id=${videoIds}&part=contentDetails,snippet,liveStreamingDetails`;
 
-    console.log(`Successfully fetched ${videos.length} videos`);
+    console.log("Fetching video details for duration and live info:", {
+      videoIds,
+    });
+
+    const videosResponse = await fetch(videosUrl);
+
+    if (!videosResponse.ok) {
+      const errorText = await videosResponse.text();
+      console.error(
+        "YouTube API videos error:",
+        videosResponse.status,
+        errorText
+      );
+      return NextResponse.json(
+        { error: `YouTube API videos error: ${videosResponse.status}` },
+        { status: videosResponse.status }
+      );
+    }
+
+    const videosData: YouTubeVideosResponse = await videosResponse.json();
+
+    // Step 3: Combine data and determine video types
+    const videos = searchData.items.map((searchItem: YouTubeSearchItem) => {
+      const videoDetails = videosData.items.find(
+        (video) => video.id === searchItem.id.videoId
+      );
+
+      let isShort = false;
+      let isLiveArchive = false;
+      let durationSeconds = 0;
+
+      if (videoDetails) {
+        // Parse duration and check if it's a Short (≤60 seconds)
+        durationSeconds = parseDuration(videoDetails.contentDetails.duration);
+        isShort = durationSeconds <= 60 && durationSeconds > 0;
+
+        // ライブアーカイブ判定: liveStreamingDetails.actualEndTimeが存在する
+        isLiveArchive = !!(
+          videoDetails.liveStreamingDetails &&
+          videoDetails.liveStreamingDetails.actualEndTime
+        );
+      }
+
+      return {
+        id: searchItem.id.videoId,
+        title: searchItem.snippet.title,
+        thumbnail: searchItem.snippet.thumbnails.medium.url,
+        publishedAt: searchItem.snippet.publishedAt,
+        channelTitle: searchItem.snippet.channelTitle,
+        isShort,
+        isLiveArchive,
+        durationSeconds,
+      };
+    });
+
+    console.log(`Successfully fetched ${videos.length} videos with metadata`);
 
     return NextResponse.json(
       {
         videos,
-        nextPageToken: data.nextPageToken,
+        nextPageToken: searchData.nextPageToken,
       },
       {
         headers: {

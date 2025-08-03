@@ -4,6 +4,9 @@ export interface YouTubeVideo {
   thumbnail: string;
   publishedAt: string;
   channelTitle: string;
+  isShort: boolean;
+  isLiveArchive: boolean;
+  durationSeconds: number;
 }
 
 export interface YouTubeResponse {
@@ -34,7 +37,9 @@ export async function getChannelVideos(
 
     const data: YouTubeResponse = await response.json();
 
-    console.log(`Successfully received ${data.videos.length} videos`);
+    console.log(
+      `Successfully received ${data.videos.length} videos with metadata`
+    );
 
     return data;
   } catch (error) {

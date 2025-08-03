@@ -9,8 +9,9 @@ import {
   HStack,
   Link,
   Skeleton,
+  Badge,
 } from "@chakra-ui/react";
-import { FiExternalLink, FiCalendar } from "react-icons/fi";
+import { FiExternalLink, FiCalendar, FiPlay, FiRadio } from "react-icons/fi";
 import { YouTubeVideo } from "@/lib/youtube";
 
 interface VideoListProps {
@@ -26,6 +27,22 @@ function formatDate(dateString: string): string {
     month: "long",
     day: "numeric",
   });
+}
+
+function formatDuration(seconds: number): string {
+  if (seconds === 0) return "";
+
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainingSeconds = seconds % 60;
+
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, "0")}:${remainingSeconds
+      .toString()
+      .padStart(2, "0")}`;
+  } else {
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  }
 }
 
 function VideoCard({
@@ -72,6 +89,65 @@ function VideoCard({
               h="200px"
               objectFit="cover"
             />
+
+            {/* バッジエリア（左上） */}
+            <VStack position="absolute" top={3} left={3} gap={2} align="start">
+              {video.isShort && (
+                <Badge
+                  bg="red.500"
+                  color="white"
+                  fontSize="xs"
+                  fontWeight="bold"
+                  px={2}
+                  py={1}
+                  borderRadius="md"
+                  display="flex"
+                  alignItems="center"
+                  textTransform="none"
+                >
+                  <FiPlay size={10} />
+                  <Text ml={1}>ショート</Text>
+                </Badge>
+              )}
+
+              {video.isLiveArchive && (
+                <Badge
+                  bg="purple.500"
+                  color="white"
+                  fontSize="xs"
+                  fontWeight="bold"
+                  px={2}
+                  py={1}
+                  borderRadius="md"
+                  display="flex"
+                  alignItems="center"
+                  textTransform="none"
+                >
+                  <FiRadio size={10} />
+                  <Text ml={1}>ライブ</Text>
+                </Badge>
+              )}
+            </VStack>
+
+            {/* 動画時間（右下） */}
+            {!video.isShort && video.durationSeconds > 0 && (
+              <Box
+                position="absolute"
+                bottom={3}
+                right={3}
+                bg="blackAlpha.800"
+                color="white"
+                px={2}
+                py={1}
+                borderRadius="md"
+                fontSize="xs"
+                fontWeight="bold"
+              >
+                {formatDuration(video.durationSeconds)}
+              </Box>
+            )}
+
+            {/* 外部リンクアイコン（右上） */}
             <Box
               position="absolute"
               top={3}
